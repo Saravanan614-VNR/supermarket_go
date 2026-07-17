@@ -10,6 +10,10 @@ import (
 	"go.uber.org/zap"
 	"supermarket-backend/exceptions"
 	"supermarket-backend/middleware"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "supermarket-backend/docs"
 )
 
 // RegisterRoutes configures all the endpoints of the SupermarketService,
@@ -42,6 +46,9 @@ func RegisterRoutes(
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+	// Swagger API Docs
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Base API V1 Router Group
 	v1 := r.Group("/api/v1")
