@@ -1,0 +1,38 @@
+# ---- Secrets / local config ----
+.env
+.env.*
+!.env.example
+
+# ---- Go build artifacts ----
+supermarket-backend
+supermarket-backend.exe
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+
+# ---- Go tooling ----
+*.test
+*.out
+coverage.out
+coverage.html
+vendor/
+
+# ---- IDE / editor ----
+.vscode/
+.idea/
+*.swp
+*.swp~
+
+# ---- OS noise ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Logs / temp ----
+*.log
+tmp/
+temp/
