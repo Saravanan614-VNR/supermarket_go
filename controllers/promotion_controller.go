@@ -39,7 +39,7 @@ func NewPromotionController(promotionService services.PromotionService) *Promoti
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/promotions [post]
+// @Router /api/v0.0/promotions [post]
 func (ctrl *PromotionController) CreatePromotion(c *gin.Context) {
 	var req dto.CreatePromotionReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -69,7 +69,7 @@ func (ctrl *PromotionController) CreatePromotion(c *gin.Context) {
 // @Success 200 {object} dto.PaginatedPromotions
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/promotions [get]
+// @Router /api/v0.0/promotions [get]
 func (ctrl *PromotionController) ListPromotions(c *gin.Context) {
 	page, size := getPaginationParams(c)
 
@@ -94,7 +94,7 @@ func (ctrl *PromotionController) ListPromotions(c *gin.Context) {
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/promotions/{id} [get]
+// @Router /api/v0.0/promotions/{id} [get]
 func (ctrl *PromotionController) GetPromotionByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -128,7 +128,7 @@ func (ctrl *PromotionController) GetPromotionByID(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/promotions/{id} [put]
+// @Router /api/v0.0/promotions/{id} [put]
 func (ctrl *PromotionController) UpdatePromotion(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -167,7 +167,7 @@ func (ctrl *PromotionController) UpdatePromotion(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/promotions/{id} [delete]
+// @Router /api/v0.0/promotions/{id} [delete]
 func (ctrl *PromotionController) DeletePromotion(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -201,7 +201,7 @@ func (ctrl *PromotionController) DeletePromotion(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/promotions/{id}/products [post]
+// @Router /api/v0.0/promotions/{id}/products [post]
 func (ctrl *PromotionController) LinkProductsToPromotion(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -241,7 +241,7 @@ func (ctrl *PromotionController) LinkProductsToPromotion(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/promotions/{id}/products/{productId} [delete]
+// @Router /api/v0.0/promotions/{id}/products/{productId} [delete]
 func (ctrl *PromotionController) UnlinkProductFromPromotion(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -267,4 +267,4 @@ func (ctrl *PromotionController) UnlinkProductFromPromotion(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SimpleMsg{Message: "Product unlinked successfully"})
-}
+}

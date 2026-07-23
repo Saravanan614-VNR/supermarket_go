@@ -60,4 +60,4 @@ type PromotionService interface {
 	DeletePromotion(ctx context.Context, id uint64) error
 	LinkProductsToPromotion(ctx context.Context, id uint64, productIDs []uint64) error
 	UnlinkProductFromPromotion(ctx context.Context, id uint64, productID uint64) error
-}
+}

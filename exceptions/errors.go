@@ -188,4 +188,4 @@ func FromError(err error) *AppError {
 		Message:    err.Error(),
 		HTTPStatus: ErrInternal.HTTPStatus,
 	}
-}
+}

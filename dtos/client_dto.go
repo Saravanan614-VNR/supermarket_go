@@ -61,4 +61,4 @@ type ClientResponse struct {
 	// Timestamp when the client profile was created
 	// @example 2025-02-14T17:00:00Z
 	CreatedAt time.Time `json:"createdAt" example:"2025-02-14T17:00:00Z"`
-}
+}

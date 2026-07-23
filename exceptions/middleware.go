@@ -118,4 +118,4 @@ func RecoveryMiddleware(logger *zap.Logger) gin.HandlerFunc {
 		}()
 		c.Next()
 	}
-}
+}

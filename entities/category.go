@@ -25,4 +25,4 @@ type Category struct {
 // TableName overrides the table name to "category".
 func (Category) TableName() string {
 	return "category"
-}
+}

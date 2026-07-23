@@ -31,6 +31,7 @@ type MockSaleService struct {
 	RemoveItemFromSaleFunc func(ctx context.Context, saleID, itemID uint64) (*dto.SaleDetailResponse, error)
 	FinalizeSaleFunc       func(ctx context.Context, id uint64) (*dto.SaleResponse, error)
 	CancelSaleFunc         func(ctx context.Context, id uint64) (*dto.SaleResponse, error)
+	GetSaleDetailByIDFunc  func(ctx context.Context, id uint64) (*dto.LineItemResponse, error)
 }
 
 func (m *MockSaleService) OpenSale(ctx context.Context, cashierID uint64, req *dto.OpenSaleRequest) (*dto.SaleResponse, error) {
@@ -89,6 +90,13 @@ func (m *MockSaleService) CancelSale(ctx context.Context, id uint64) (*dto.SaleR
 	return nil, nil
 }
 
+func (m *MockSaleService) GetSaleDetailByID(ctx context.Context, id uint64) (*dto.LineItemResponse, error) {
+	if m.GetSaleDetailByIDFunc != nil {
+		return m.GetSaleDetailByIDFunc(ctx, id)
+	}
+	return nil, nil
+}
+
 func TestOpenSale_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockService := &MockSaleService{
@@ -106,7 +114,7 @@ func TestOpenSale_Success(t *testing.T) {
 
 	ctrl := controllers.NewSaleController(mockService)
 	router := gin.New()
-	router.POST("/api/v1/sales", func(c *gin.Context) {
+	router.POST("/api/v0.0/sales", func(c *gin.Context) {
 		c.Set("operatorID", uint64(5))
 		c.Next()
 	}, ctrl.OpenSale)
@@ -116,7 +124,7 @@ func TestOpenSale_Success(t *testing.T) {
 		ClientID: &clientIDVal,
 	}
 	body, _ := json.Marshal(reqPayload)
-	req, _ := http.NewRequest("POST", "/api/v1/sales", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", "/api/v0.0/sales", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -150,9 +158,9 @@ func TestOpenSale_Unauthorized(t *testing.T) {
 			}
 		}
 	})
-	router.POST("/api/v1/sales", ctrl.OpenSale) // No operatorID set, so it will fail with unauthorized
+	router.POST("/api/v0.0/sales", ctrl.OpenSale) // No operatorID set, so it will fail with unauthorized
 
-	req, _ := http.NewRequest("POST", "/api/v1/sales", nil)
+	req, _ := http.NewRequest("POST", "/api/v0.0/sales", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -188,14 +196,14 @@ func TestAddItemToSale_Success(t *testing.T) {
 
 	ctrl := controllers.NewSaleController(mockService)
 	router := gin.New()
-	router.POST("/api/v1/sales/:id/items", ctrl.AddItemToSale)
+	router.POST("/api/v0.0/sales/:id/details", ctrl.AddItemToSale)
 
 	reqPayload := dto.AddItemRequest{
 		ProductID: 42,
 		Quantity:  3,
 	}
 	body, _ := json.Marshal(reqPayload)
-	req, _ := http.NewRequest("POST", "/api/v1/sales/10/items", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", "/api/v0.0/sales/10/details", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -227,9 +235,9 @@ func TestFinalizeSale_Success(t *testing.T) {
 
 	ctrl := controllers.NewSaleController(mockService)
 	router := gin.New()
-	router.POST("/api/v1/sales/:id/finalize", ctrl.FinalizeSale)
+	router.PATCH("/api/v0.0/sales/:id/finalize", ctrl.FinalizeSale)
 
-	req, _ := http.NewRequest("POST", "/api/v1/sales/10/finalize", nil)
+	req, _ := http.NewRequest("PATCH", "/api/v0.0/sales/10/finalize", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -242,6 +250,152 @@ func TestFinalizeSale_Success(t *testing.T) {
 	_ = json.Unmarshal(w.Body.Bytes(), &resp)
 
 	if resp.ID != 10 || resp.Status != "CLOSED" {
+		t.Errorf("unexpected response body: %+v", resp)
+	}
+}
+
+func TestCancelSale_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := &MockSaleService{
+		CancelSaleFunc: func(ctx context.Context, id uint64) (*dto.SaleResponse, error) {
+			return &dto.SaleResponse{
+				ID:         id,
+				TotalPrice: 20.0,
+				Status:     "CANCELED",
+			}, nil
+		},
+	}
+
+	ctrl := controllers.NewSaleController(mockService)
+	router := gin.New()
+	router.DELETE("/api/v0.0/sales/:id", ctrl.CancelSale)
+
+	req, _ := http.NewRequest("DELETE", "/api/v0.0/sales/10", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	var resp dto.SaleResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &resp)
+
+	if resp.ID != 10 || resp.Status != "CANCELED" {
+		t.Errorf("unexpected response body: %+v", resp)
+	}
+}
+
+func TestUpdateItemQuantity_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := &MockSaleService{
+		UpdateItemQuantityFunc: func(ctx context.Context, saleID, itemID uint64, req *dto.UpdateItemQtyRequest) (*dto.SaleDetailResponse, error) {
+			return &dto.SaleDetailResponse{
+				Sale: dto.SaleResponse{
+					ID:         10,
+					TotalPrice: 25.0,
+					Status:     "OPEN",
+				},
+				LineItems: []dto.LineItemResponse{
+					{
+						ItemID:    itemID,
+						ProductID: 42,
+						Quantity:  req.Quantity,
+						SubTotal:  25.0,
+					},
+				},
+			}, nil
+		},
+	}
+
+	ctrl := controllers.NewSaleController(mockService)
+	router := gin.New()
+	router.PUT("/api/v0.0/sales/details/:id", ctrl.UpdateItemQuantity)
+
+	reqPayload := dto.UpdateItemQtyRequest{
+		Quantity: 5,
+	}
+	body, _ := json.Marshal(reqPayload)
+	req, _ := http.NewRequest("PUT", "/api/v0.0/sales/details/201", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	var resp dto.SaleDetailResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &resp)
+
+	if len(resp.LineItems) != 1 || resp.LineItems[0].ItemID != 201 || resp.LineItems[0].Quantity != 5 {
+		t.Errorf("unexpected response body: %+v", resp)
+	}
+}
+
+func TestRemoveItemFromSale_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := &MockSaleService{
+		RemoveItemFromSaleFunc: func(ctx context.Context, saleID, itemID uint64) (*dto.SaleDetailResponse, error) {
+			return &dto.SaleDetailResponse{
+				Sale: dto.SaleResponse{
+					ID:         10,
+					TotalPrice: 0.0,
+					Status:     "OPEN",
+				},
+				LineItems: []dto.LineItemResponse{},
+			}, nil
+		},
+	}
+
+	ctrl := controllers.NewSaleController(mockService)
+	router := gin.New()
+	router.DELETE("/api/v0.0/sales/details/:id", ctrl.RemoveItemFromSale)
+
+	req, _ := http.NewRequest("DELETE", "/api/v0.0/sales/details/201", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+}
+
+func TestGetSaleDetailByID_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := &MockSaleService{
+		GetSaleDetailByIDFunc: func(ctx context.Context, id uint64) (*dto.LineItemResponse, error) {
+			return &dto.LineItemResponse{
+				ItemID:    id,
+				ProductID: 42,
+				Name:      "Coca Cola",
+				UnitPrice: 1.50,
+				Quantity:  2,
+				SubTotal:  3.00,
+			}, nil
+		},
+	}
+
+	ctrl := controllers.NewSaleController(mockService)
+	router := gin.New()
+	router.GET("/api/v0.0/sales/details/:id", ctrl.GetSaleDetailByID)
+
+	req, _ := http.NewRequest("GET", "/api/v0.0/sales/details/201", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	var resp dto.LineItemResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &resp)
+
+	if resp.ItemID != 201 || resp.ProductID != 42 || resp.Name != "Coca Cola" {
 		t.Errorf("unexpected response body: %+v", resp)
 	}
 }

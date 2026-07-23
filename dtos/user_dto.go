@@ -88,4 +88,4 @@ type UpdateUserRequest struct {
 	// Operator's new secure password (optional)
 	// @example NewSecretP@ss123
 	Password string `json:"password" binding:"omitempty,min=8,max=100" example:"NewSecretP@ss123"`
-}
+}

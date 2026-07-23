@@ -129,4 +129,4 @@ func GetCorrelationID(c *gin.Context) string {
 		}
 	}
 	return ""
-}
+}

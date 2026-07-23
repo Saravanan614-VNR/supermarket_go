@@ -53,4 +53,4 @@ type SaleDetail struct {
 // TableName overrides the table name to "sale_detail".
 func (SaleDetail) TableName() string {
 	return "sale_detail"
-}
+}

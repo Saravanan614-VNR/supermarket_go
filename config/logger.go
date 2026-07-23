@@ -58,4 +58,4 @@ func NewLogger(cfg *Config) (*zap.Logger, error) {
 	)
 
 	return logger, nil
-}
+}

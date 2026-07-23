@@ -210,4 +210,4 @@ func (h *GRPCHandler) GetProductPrice(ctx context.Context, req *CalculatePriceRe
 	}
 
 	return resp, nil
-}
+}

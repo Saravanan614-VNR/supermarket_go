@@ -43,4 +43,4 @@ type PromotionProduct struct {
 // TableName overrides the table name to "promotion_products".
 func (PromotionProduct) TableName() string {
 	return "promotion_products"
-}
+}

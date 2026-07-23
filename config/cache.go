@@ -40,4 +40,4 @@ func NewCache(cfg *Config, zapLog *zap.Logger) (*ristretto.Cache, error) {
 
 	zapLog.Info("Ristretto in-memory cache initialized successfully")
 	return cache, nil
-}
+}

@@ -169,4 +169,4 @@ type PaginatedSales struct {
 	// Total matching items in system
 	// @example 3200
 	TotalCount int64 `json:"totalCount" example:"3200"`
-}
+}

@@ -29,4 +29,4 @@ type ErrorResponse struct {
 	// Time of the error occurrence
 	// @example 2025-02-14T17:00:00Z
 	Timestamp time.Time `json:"timestamp" example:"2025-02-14T17:00:00Z"`
-}
+}

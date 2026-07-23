@@ -180,4 +180,4 @@ func loadDotEnv(filename string) error {
 	}
 
 	return scanner.Err()
-}
+}

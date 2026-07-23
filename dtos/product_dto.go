@@ -144,4 +144,4 @@ type PromoShortResponse struct {
 	// Active discount percentage (e.g. 10.0 for 10% off)
 	// @example 10.0
 	DiscountPercentage float64 `json:"discountPercentage" example:"10.0"`
-}
+}

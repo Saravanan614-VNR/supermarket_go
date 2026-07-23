@@ -121,4 +121,4 @@ func (r *categoryRepository) SoftDeleteWithTx(ctx context.Context, tx *gorm.DB, 
 		db = tx
 	}
 	return db.WithContext(ctx).Delete(&entities.Category{}, id).Error
-}
+}

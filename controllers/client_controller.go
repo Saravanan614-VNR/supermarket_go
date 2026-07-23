@@ -40,7 +40,7 @@ func NewClientController(clientService services.ClientService) *ClientController
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 409 {object} exceptions.ErrorResponse "Client with this DNI already exists"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/clients [post]
+// @Router /api/v0.0/clients [post]
 func (ctrl *ClientController) CreateClient(c *gin.Context) {
 	var req dto.CreateClientReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -73,7 +73,7 @@ func (ctrl *ClientController) CreateClient(c *gin.Context) {
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/clients [get]
+// @Router /api/v0.0/clients [get]
 func (ctrl *ClientController) ListClients(c *gin.Context) {
 	page, size := getPaginationParams(c)
 	dni := c.Query("dni")
@@ -101,7 +101,7 @@ func (ctrl *ClientController) ListClients(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/clients/{id} [get]
+// @Router /api/v0.0/clients/{id} [get]
 func (ctrl *ClientController) GetClientByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -135,7 +135,7 @@ func (ctrl *ClientController) GetClientByID(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/clients/{id} [put]
+// @Router /api/v0.0/clients/{id} [put]
 func (ctrl *ClientController) UpdateClient(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -174,7 +174,7 @@ func (ctrl *ClientController) UpdateClient(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/clients/{id} [delete]
+// @Router /api/v0.0/clients/{id} [delete]
 func (ctrl *ClientController) DeleteClient(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -208,7 +208,7 @@ func (ctrl *ClientController) DeleteClient(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/clients/search [get]
+// @Router /api/v0.0/clients/search [get]
 func (ctrl *ClientController) SearchClient(c *gin.Context) {
 	dni := c.Query("dni")
 	email := c.Query("email")
@@ -220,6 +220,37 @@ func (ctrl *ClientController) SearchClient(c *gin.Context) {
 	}
 
 	res, err := ctrl.clientService.SearchClient(c.Request.Context(), dni, email)
+	if err != nil {
+		c.Error(err)
+		c.Abort()
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+// GetClientByDNI retrieves a client by their DNI.
+// @Summary Get Client by DNI
+// @Description Find unique customer record directly by DNI. ADMIN or CASHIER role required.
+// @Tags Clients
+// @Accept json
+// @Produce json
+// @Param dni path string true "National ID (DNI)"
+// @Success 200 {object} dto.ClientResponse
+// @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
+// @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
+// @Failure 404 {object} exceptions.ErrorResponse "Not Found"
+// @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
+// @Router /api/v0.0/clients/dni/{dni} [get]
+func (ctrl *ClientController) GetClientByDNI(c *gin.Context) {
+	dni := c.Param("dni")
+	if dni == "" {
+		c.Error(exceptions.NewValidationError("DNI parameter is required"))
+		c.Abort()
+		return
+	}
+
+	res, err := ctrl.clientService.SearchClient(c.Request.Context(), dni, "")
 	if err != nil {
 		c.Error(err)
 		c.Abort()

@@ -49,4 +49,4 @@ type CategoryResponse struct {
 	// Timestamp when the category was created
 	// @example 2025-02-14T17:00:00Z
 	CreatedAt time.Time `json:"createdAt" example:"2025-02-14T17:00:00Z"`
-}
+}

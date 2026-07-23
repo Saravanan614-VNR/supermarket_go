@@ -25,4 +25,4 @@ type Client struct {
 // TableName overrides the table name to "client".
 func (Client) TableName() string {
 	return "client"
-}
+}

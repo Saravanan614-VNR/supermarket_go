@@ -144,4 +144,4 @@ func maskDSN(dsn string) string {
 		return fmt.Sprintf("%s:****@%s", userPassParts[0], parts[1])
 	}
 	return fmt.Sprintf("****@%s", parts[1])
-}
+}

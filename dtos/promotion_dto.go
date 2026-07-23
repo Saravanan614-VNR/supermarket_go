@@ -85,4 +85,4 @@ type LinkProductsReq struct {
 	// IDs of products to associate with the promotion (at least one)
 	// @example [3, 4, 5]
 	ProductIDs []uint64 `json:"productIds" binding:"required,min=1" example:"3,4,5"`
-}
+}

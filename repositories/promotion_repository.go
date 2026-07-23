@@ -110,4 +110,4 @@ func (r *promotionRepository) UnlinkProductWithTx(ctx context.Context, tx *gorm.
 		Table("promotion_products").
 		Where("promotion_id = ? AND product_id = ?", promotionID, productID).
 		Delete(nil).Error
-}
+}

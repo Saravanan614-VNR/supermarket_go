@@ -122,4 +122,4 @@ func (r *clientRepository) Search(ctx context.Context, query string) ([]entities
 		return nil, err
 	}
 	return clients, nil
-}
+}

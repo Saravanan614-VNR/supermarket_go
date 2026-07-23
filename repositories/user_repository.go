@@ -93,4 +93,4 @@ func (r *userRepository) FindAll(ctx context.Context, offset, limit int) ([]enti
 	}
 
 	return users, total, nil
-}
+}

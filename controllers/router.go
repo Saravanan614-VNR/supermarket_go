@@ -6,14 +6,16 @@
 package controllers
 
 import (
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"supermarket-backend/exceptions"
 	"supermarket-backend/middleware"
 
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	_ "supermarket-backend/docs"
+
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	_ "supermarket-backend/docs"
 )
 
 // RegisterRoutes configures all the endpoints of the SupermarketService,
@@ -27,10 +29,10 @@ func RegisterRoutes(
 	promoCtrl *PromotionController,
 	saleCtrl *SaleController,
 	logger *zap.Logger,
-	authMiddleware gin.HandlerFunc,                         // JWT parsing and injection
+	authMiddleware gin.HandlerFunc, // JWT parsing and injection
 	roleGuard func(allowedRoles ...string) gin.HandlerFunc, // Role enforcement middleware builder
-	ownerOrAdminGuard gin.HandlerFunc,                      // Resource ownership enforcement (self or ADMIN)
-	allowedOrigins []string,                                // CORS allow-list
+	ownerOrAdminGuard gin.HandlerFunc, // Resource ownership enforcement (self or ADMIN)
+	allowedOrigins []string, // CORS allow-list
 ) {
 	// Register global middleware
 	r.Use(middleware.LoggerMiddleware(logger))
@@ -42,7 +44,7 @@ func RegisterRoutes(
 	rateLimiter := middleware.NewIPRateLimiter(100.0, 20.0)
 	r.Use(rateLimiter.Limit())
 
-	// Liveness/readiness probe - intentionally unauthenticated and outside /api/v1
+	// Liveness/readiness probe - intentionally unauthenticated and outside /api/v0.0
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
@@ -50,49 +52,53 @@ func RegisterRoutes(
 	// Swagger API Docs
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Base API V1 Router Group
-	v1 := r.Group("/api/v1")
+	// Base API V0.0 Router Group (Aligned with Legacy Java Codebase)
+	v0 := r.Group("/api/v0.0")
 	{
 		// ----------------------------------------------------
 		// Users / Auth Domain
 		// ----------------------------------------------------
-		users := v1.Group("/users")
+		auth := v0.Group("/auth")
 		{
 			// Public login
-			users.POST("/login", userCtrl.LoginUser)
+			auth.POST("/login", userCtrl.LoginUser)
 
-			// Authenticated routes
-			users.Use(authMiddleware)
+			// Authenticated auth actions
+			auth.Use(authMiddleware)
 			{
+				// Admin-only register operator
+				auth.POST("/register", roleGuard("ADMIN"), userCtrl.RegisterUser)
+				
 				// Logout (Any operator)
-				users.POST("/logout", userCtrl.LogoutUser)
-
-				// Operator retrieval and update (Self or ADMIN protected)
-				selfOrAdmin := users.Group("")
-				selfOrAdmin.Use(ownerOrAdminGuard)
-				{
-					selfOrAdmin.GET("/:id", userCtrl.GetUserByID)
-					selfOrAdmin.PUT("/:id", userCtrl.UpdateUser)
-				}
-
-				// Admin-only endpoints
-				adminOnly := users.Group("")
-				adminOnly.Use(roleGuard("ADMIN"))
-				{
-					adminOnly.POST("", userCtrl.RegisterUser)
-					adminOnly.GET("", userCtrl.ListUsers)
-					adminOnly.DELETE("/:id", userCtrl.DeleteUser)
-				}
+				auth.POST("/logout", userCtrl.LogoutUser)
 			}
+		}
+
+		users := v0.Group("/users")
+		users.Use(authMiddleware)
+		{
+			// Admin-only list operators
+			users.GET("", roleGuard("ADMIN"), userCtrl.ListUsers)
+
+			// Operator retrieval and update (Self or ADMIN protected)
+			selfOrAdmin := users.Group("")
+			selfOrAdmin.Use(ownerOrAdminGuard)
+			{
+				selfOrAdmin.GET("/:id", userCtrl.GetUserByID)
+				selfOrAdmin.PUT("/:id", userCtrl.UpdateUser)
+			}
+
+			// Admin-only soft delete operator profile
+			users.DELETE("/:id", roleGuard("ADMIN"), userCtrl.DeleteUser)
 		}
 
 		// ----------------------------------------------------
 		// Categories Domain
 		// ----------------------------------------------------
-		categories := v1.Group("/categories")
+		categories := v0.Group("/categories")
 		categories.Use(authMiddleware)
 		{
-			// Public catalog reading for any logged in operator
+			// Reading catalog for any logged-in operator
 			categories.GET("", catCtrl.ListCategories)
 			categories.GET("/:id", catCtrl.GetCategoryByID)
 			categories.GET("/:id/products", catCtrl.ListCategoryProducts)
@@ -106,15 +112,13 @@ func RegisterRoutes(
 			}
 
 			// Admin-only soft delete
-			adminOnlyDelete := categories.Group("")
-			adminOnlyDelete.Use(roleGuard("ADMIN"))
-			adminOnlyDelete.DELETE("/:id", catCtrl.DeleteCategory)
+			categories.DELETE("/:id", roleGuard("ADMIN"), catCtrl.DeleteCategory)
 		}
 
 		// ----------------------------------------------------
 		// Clients Domain
 		// ----------------------------------------------------
-		clients := v1.Group("/clients")
+		clients := v0.Group("/clients")
 		clients.Use(authMiddleware)
 		{
 			// Read/Write access (ADMIN or CASHIER)
@@ -124,20 +128,19 @@ func RegisterRoutes(
 				cashierAndAdmin.POST("", clientCtrl.CreateClient)
 				cashierAndAdmin.GET("", clientCtrl.ListClients)
 				cashierAndAdmin.GET("/search", clientCtrl.SearchClient)
+				cashierAndAdmin.GET("/dni/:dni", clientCtrl.GetClientByDNI) // Aligned with legacy Java DNI path
 				cashierAndAdmin.GET("/:id", clientCtrl.GetClientByID)
 				cashierAndAdmin.PUT("/:id", clientCtrl.UpdateClient)
 			}
 
 			// Admin-only soft delete
-			adminOnlyDelete := clients.Group("")
-			adminOnlyDelete.Use(roleGuard("ADMIN"))
-			adminOnlyDelete.DELETE("/:id", clientCtrl.DeleteClient)
+			clients.DELETE("/:id", roleGuard("ADMIN"), clientCtrl.DeleteClient)
 		}
 
 		// ----------------------------------------------------
 		// Products Domain
 		// ----------------------------------------------------
-		products := v1.Group("/products")
+		products := v0.Group("/products")
 		products.Use(authMiddleware)
 		{
 			// Read catalog prices and details (All operators)
@@ -151,19 +154,17 @@ func RegisterRoutes(
 			{
 				inventoryMod.POST("", prodCtrl.CreateProduct)
 				inventoryMod.PUT("/:id", prodCtrl.UpdateProduct)
-				inventoryMod.POST("/:id/restock", prodCtrl.RestockProduct)
+				inventoryMod.PATCH("/:id/restock", prodCtrl.RestockProduct) // Aligned with legacy Java PATCH RESTOCK
 			}
 
 			// Admin-only soft delete
-			adminOnlyDelete := products.Group("")
-			adminOnlyDelete.Use(roleGuard("ADMIN"))
-			adminOnlyDelete.DELETE("/:id", prodCtrl.DeleteProduct)
+			products.DELETE("/:id", roleGuard("ADMIN"), prodCtrl.DeleteProduct)
 		}
 
 		// ----------------------------------------------------
 		// Promotions Domain
 		// ----------------------------------------------------
-		promotions := v1.Group("/promotions")
+		promotions := v0.Group("/promotions")
 		promotions.Use(authMiddleware)
 		{
 			// Read campaign details (All operators)
@@ -191,7 +192,7 @@ func RegisterRoutes(
 		// ----------------------------------------------------
 		// POS Checkout Sales Domain
 		// ----------------------------------------------------
-		sales := v1.Group("/sales")
+		sales := v0.Group("/sales")
 		sales.Use(authMiddleware)
 		{
 			// POS operations (ADMIN or CASHIER)
@@ -201,11 +202,14 @@ func RegisterRoutes(
 				posOps.POST("", saleCtrl.OpenSale)
 				posOps.GET("", saleCtrl.ListSales)
 				posOps.GET("/:id", saleCtrl.GetSaleByID)
-				posOps.POST("/:id/items", saleCtrl.AddItemToSale)
-				posOps.PUT("/:id/items/:itemId", saleCtrl.UpdateItemQuantity)
-				posOps.DELETE("/:id/items/:itemId", saleCtrl.RemoveItemFromSale)
-				posOps.POST("/:id/finalize", saleCtrl.FinalizeSale)
-				posOps.POST("/:id/cancel", saleCtrl.CancelSale)
+				posOps.POST("/:id/details", saleCtrl.AddItemToSale) // Aligned with legacy Java /details endpoint
+				posOps.PATCH("/:id/finalize", saleCtrl.FinalizeSale) // Aligned with legacy Java PATCH FINALIZE
+				posOps.DELETE("/:id", saleCtrl.CancelSale) // Aligned with legacy Java DELETE CANCEL
+
+				// Sale Details Management Sub-module
+				posOps.PUT("/details/:id", saleCtrl.UpdateItemQuantity) // Aligned with legacy Java /details/{id} endpoint
+				posOps.DELETE("/details/:id", saleCtrl.RemoveItemFromSale) // Aligned with legacy Java /details/{id} endpoint
+				posOps.GET("/details/:id", saleCtrl.GetSaleDetailByID) // Aligned with legacy Java /details/{id} endpoint
 			}
 		}
 	}

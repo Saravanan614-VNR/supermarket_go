@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"supermarket-backend/controllers"
 	dto "supermarket-backend/dtos"
 	"supermarket-backend/exceptions"
@@ -87,7 +88,7 @@ func TestCreateClient_Success(t *testing.T) {
 
 	ctrl := controllers.NewClientController(mockService)
 	router := gin.New()
-	router.POST("/api/v1/clients", ctrl.CreateClient)
+	router.POST("/api/v0.0/clients", ctrl.CreateClient)
 
 	reqPayload := dto.CreateClientReq{
 		Name:  "John Doe",
@@ -95,7 +96,7 @@ func TestCreateClient_Success(t *testing.T) {
 		Email: "john.doe@example.com",
 	}
 	body, _ := json.Marshal(reqPayload)
-	req, _ := http.NewRequest("POST", "/api/v1/clients", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", "/api/v0.0/clients", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -121,7 +122,11 @@ func TestCreateClient_ValidationError(t *testing.T) {
 
 	ctrl := controllers.NewClientController(mockService)
 	router := gin.New()
-	router.POST("/api/v1/clients", ctrl.CreateClient)
+	// The controller reports validation failures via c.Error(...) + c.Abort(), which
+	// only becomes an HTTP 400 once ErrorHandlerMiddleware translates it - same chain
+	// the real app wires in controllers.RegisterRoutes.
+	router.Use(exceptions.ErrorHandlerMiddleware(zap.NewNop()))
+	router.POST("/api/v0.0/clients", ctrl.CreateClient)
 
 	// Invalid DNI (not 10 characters, not numeric)
 	reqPayload := dto.CreateClientReq{
@@ -130,7 +135,7 @@ func TestCreateClient_ValidationError(t *testing.T) {
 		Email: "invalid-email",
 	}
 	body, _ := json.Marshal(reqPayload)
-	req, _ := http.NewRequest("POST", "/api/v1/clients", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", "/api/v0.0/clients", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -166,7 +171,7 @@ func TestCreateClient_ConflictError(t *testing.T) {
 		}
 	})
 	
-	router.POST("/api/v1/clients", ctrl.CreateClient)
+	router.POST("/api/v0.0/clients", ctrl.CreateClient)
 
 	reqPayload := dto.CreateClientReq{
 		Name:  "John Doe",
@@ -174,7 +179,7 @@ func TestCreateClient_ConflictError(t *testing.T) {
 		Email: "john.doe@example.com",
 	}
 	body, _ := json.Marshal(reqPayload)
-	req, _ := http.NewRequest("POST", "/api/v1/clients", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", "/api/v0.0/clients", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -205,14 +210,50 @@ func TestGetClientByID_NotFound(t *testing.T) {
 			}
 		}
 	})
-	router.GET("/api/v1/clients/:id", ctrl.GetClientByID)
+	router.GET("/api/v0.0/clients/:id", ctrl.GetClientByID)
 
-	req, _ := http.NewRequest("GET", "/api/v1/clients/999", nil)
+	req, _ := http.NewRequest("GET", "/api/v0.0/clients/999", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
+	}
+}
+
+func TestGetClientByDNI_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := &MockClientService{
+		SearchClientFunc: func(ctx context.Context, dni, email string) (*dto.ClientResponse, error) {
+			return &dto.ClientResponse{
+				ID:    1,
+				Name:  "John Doe",
+				DNI:   dni,
+				Email: "john.doe@example.com",
+			}, nil
+		},
+	}
+
+	ctrl := controllers.NewClientController(mockService)
+	router := gin.New()
+	router.GET("/api/v0.0/clients/dni/:dni", ctrl.GetClientByDNI)
+
+	req, _ := http.NewRequest("GET", "/api/v0.0/clients/dni/1712345678", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	var resp dto.ClientResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if resp.DNI != "1712345678" {
+		t.Errorf("unexpected DNI in response: %s", resp.DNI)
 	}
 }

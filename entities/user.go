@@ -26,4 +26,4 @@ type User struct {
 // TableName overrides the table name to "_user" to avoid conflicts with SQL reserved keywords.
 func (User) TableName() string {
 	return "_user"
-}
+}

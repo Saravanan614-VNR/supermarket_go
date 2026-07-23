@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "b6f2a1b0-6a0e-4d3a-9b6d-supermarket-backend",
 		"name": "SupermarketService API",
-		"description": "Postman collection for all endpoints registered in controllers/router.go (RegisterRoutes). Base URL and JWT token are driven by collection variables so requests can be run end-to-end: Login -> token auto-saved -> use on subsequent requests.",
+		"description": "Postman collection for all endpoints registered in controllers/router.go (RegisterRoutes). Base path is /api/v0.0, aligned with the legacy Java codebase. Base URL and JWT token are driven by collection variables so requests can be run end-to-end: Login -> token auto-saved -> use on subsequent requests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -21,6 +21,7 @@
 		{ "key": "userId", "value": "1", "type": "string" },
 		{ "key": "categoryId", "value": "1", "type": "string" },
 		{ "key": "clientId", "value": "1", "type": "string" },
+		{ "key": "clientDni", "value": "1712345678", "type": "string" },
 		{ "key": "productId", "value": "1", "type": "string" },
 		{ "key": "promotionId", "value": "1", "type": "string" },
 		{ "key": "saleId", "value": "1", "type": "string" },
@@ -44,11 +45,26 @@
 						"description": "Liveness/readiness probe. Unauthenticated."
 					},
 					"response": []
+				},
+				{
+					"name": "Swagger UI",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/swagger/index.html",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "swagger", "index.html" ]
+						},
+						"description": "Interactive API docs."
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "Users / Auth",
+			"name": "Auth",
 			"item": [
 				{
 					"name": "Login",
@@ -79,11 +95,31 @@
 							"raw": "{\n  \"username\": \"johndoe123\",\n  \"password\": \"SecretP@ss123\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/users/login",
+							"raw": "{{baseUrl}}/api/v0.0/auth/login",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "users", "login" ]
+							"path": [ "api", "v0.0", "auth", "login" ]
 						},
 						"description": "Public login. On success, saves the returned JWT into the {{authToken}} collection variable for use by all other requests."
+					},
+					"response": []
+				},
+				{
+					"name": "Register User (ADMIN only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"username\": \"johndoe123\",\n  \"password\": \"SecretP@ss123\",\n  \"role\": \"CASHIER\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v0.0/auth/register",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "v0.0", "auth", "register" ]
+						},
+						"description": "role must be one of ADMIN, CASHIER, INVENTORY."
 					},
 					"response": []
 				},
@@ -93,23 +129,28 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/users/logout",
+							"raw": "{{baseUrl}}/api/v0.0/auth/logout",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "users", "logout" ]
+							"path": [ "api", "v0.0", "auth", "logout" ]
 						},
 						"description": "Revokes the current bearer token (adds it to the blacklist). Any authenticated operator."
 					},
 					"response": []
-				},
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
 				{
 					"name": "Get User By ID (Self or ADMIN)",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+							"raw": "{{baseUrl}}/api/v0.0/users/{{userId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "users", "{{userId}}" ]
+							"path": [ "api", "v0.0", "users", "{{userId}}" ]
 						},
 						"description": "Non-admin operators may only fetch their own profile (path :id must match the JWT subject)."
 					},
@@ -127,31 +168,11 @@
 							"raw": "{\n  \"fullName\": \"John Updated Doe\",\n  \"password\": \"NewSecretP@ss123\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+							"raw": "{{baseUrl}}/api/v0.0/users/{{userId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "users", "{{userId}}" ]
+							"path": [ "api", "v0.0", "users", "{{userId}}" ]
 						},
 						"description": "All fields optional. Non-admin operators may only update their own profile."
-					},
-					"response": []
-				},
-				{
-					"name": "Register User (ADMIN only)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"username\": \"johndoe123\",\n  \"password\": \"SecretP@ss123\",\n  \"role\": \"CASHIER\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/v1/users",
-							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "users" ]
-						},
-						"description": "role must be one of ADMIN, CASHIER, INVENTORY."
 					},
 					"response": []
 				},
@@ -161,9 +182,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/users?page=1&size=10",
+							"raw": "{{baseUrl}}/api/v0.0/users?page=1&size=10",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "users" ],
+							"path": [ "api", "v0.0", "users" ],
 							"query": [
 								{ "key": "page", "value": "1" },
 								{ "key": "size", "value": "10" }
@@ -178,9 +199,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+							"raw": "{{baseUrl}}/api/v0.0/users/{{userId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "users", "{{userId}}" ]
+							"path": [ "api", "v0.0", "users", "{{userId}}" ]
 						}
 					},
 					"response": []
@@ -196,9 +217,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/categories?page=1&size=10&filter=",
+							"raw": "{{baseUrl}}/api/v0.0/categories?page=1&size=10&filter=",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "categories" ],
+							"path": [ "api", "v0.0", "categories" ],
 							"query": [
 								{ "key": "page", "value": "1" },
 								{ "key": "size", "value": "10" },
@@ -214,9 +235,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+							"raw": "{{baseUrl}}/api/v0.0/categories/{{categoryId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "categories", "{{categoryId}}" ]
+							"path": [ "api", "v0.0", "categories", "{{categoryId}}" ]
 						}
 					},
 					"response": []
@@ -227,9 +248,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}/products?page=1&size=10",
+							"raw": "{{baseUrl}}/api/v0.0/categories/{{categoryId}}/products?page=1&size=10",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "categories", "{{categoryId}}", "products" ],
+							"path": [ "api", "v0.0", "categories", "{{categoryId}}", "products" ],
 							"query": [
 								{ "key": "page", "value": "1" },
 								{ "key": "size", "value": "10" }
@@ -250,9 +271,9 @@
 							"raw": "{\n  \"name\": \"Beverages\",\n  \"description\": \"Soft drinks, juices, water, and energy drinks\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/categories",
+							"raw": "{{baseUrl}}/api/v0.0/categories",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "categories" ]
+							"path": [ "api", "v0.0", "categories" ]
 						}
 					},
 					"response": []
@@ -269,9 +290,9 @@
 							"raw": "{\n  \"name\": \"Carbonated Beverages\",\n  \"description\": \"All carbonated and non-carbonated soft drinks\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+							"raw": "{{baseUrl}}/api/v0.0/categories/{{categoryId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "categories", "{{categoryId}}" ]
+							"path": [ "api", "v0.0", "categories", "{{categoryId}}" ]
 						}
 					},
 					"response": []
@@ -282,9 +303,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+							"raw": "{{baseUrl}}/api/v0.0/categories/{{categoryId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "categories", "{{categoryId}}" ]
+							"path": [ "api", "v0.0", "categories", "{{categoryId}}" ]
 						}
 					},
 					"response": []
@@ -306,9 +327,9 @@
 							"raw": "{\n  \"name\": \"Jane Doe\",\n  \"dni\": \"1712345678\",\n  \"email\": \"jane.doe@example.com\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/clients",
+							"raw": "{{baseUrl}}/api/v0.0/clients",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "clients" ]
+							"path": [ "api", "v0.0", "clients" ]
 						},
 						"description": "dni must be exactly 10 numeric digits."
 					},
@@ -320,9 +341,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/clients?page=1&size=10",
+							"raw": "{{baseUrl}}/api/v0.0/clients?page=1&size=10",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "clients" ],
+							"path": [ "api", "v0.0", "clients" ],
 							"query": [
 								{ "key": "page", "value": "1" },
 								{ "key": "size", "value": "10" }
@@ -337,9 +358,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/clients/search?dni=1712345678&email=",
+							"raw": "{{baseUrl}}/api/v0.0/clients/search?dni=1712345678&email=",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "clients", "search" ],
+							"path": [ "api", "v0.0", "clients", "search" ],
 							"query": [
 								{ "key": "dni", "value": "1712345678" },
 								{ "key": "email", "value": "", "description": "Either dni or email must be provided" }
@@ -349,14 +370,28 @@
 					"response": []
 				},
 				{
+					"name": "Get Client By DNI (ADMIN/CASHIER)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v0.0/clients/dni/{{clientDni}}",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "v0.0", "clients", "dni", "{{clientDni}}" ]
+						},
+						"description": "Aligned with legacy Java DNI lookup path. Equivalent to Search Client with only ?dni= set."
+					},
+					"response": []
+				},
+				{
 					"name": "Get Client By ID (ADMIN/CASHIER)",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
+							"raw": "{{baseUrl}}/api/v0.0/clients/{{clientId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "clients", "{{clientId}}" ]
+							"path": [ "api", "v0.0", "clients", "{{clientId}}" ]
 						}
 					},
 					"response": []
@@ -373,9 +408,9 @@
 							"raw": "{\n  \"name\": \"Jane Smith\",\n  \"dni\": \"1712345678\",\n  \"email\": \"jane.smith@example.com\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
+							"raw": "{{baseUrl}}/api/v0.0/clients/{{clientId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "clients", "{{clientId}}" ]
+							"path": [ "api", "v0.0", "clients", "{{clientId}}" ]
 						}
 					},
 					"response": []
@@ -386,9 +421,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
+							"raw": "{{baseUrl}}/api/v0.0/clients/{{clientId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "clients", "{{clientId}}" ]
+							"path": [ "api", "v0.0", "clients", "{{clientId}}" ]
 						}
 					},
 					"response": []
@@ -404,9 +439,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/products?page=1&size=10",
+							"raw": "{{baseUrl}}/api/v0.0/products?page=1&size=10",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "products" ],
+							"path": [ "api", "v0.0", "products" ],
 							"query": [
 								{ "key": "page", "value": "1" },
 								{ "key": "size", "value": "10" }
@@ -421,9 +456,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+							"raw": "{{baseUrl}}/api/v0.0/products/{{productId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "products", "{{productId}}" ]
+							"path": [ "api", "v0.0", "products", "{{productId}}" ]
 						}
 					},
 					"response": []
@@ -434,9 +469,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/products/{{productId}}/price",
+							"raw": "{{baseUrl}}/api/v0.0/products/{{productId}}/price",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "products", "{{productId}}", "price" ]
+							"path": [ "api", "v0.0", "products", "{{productId}}", "price" ]
 						}
 					},
 					"response": []
@@ -453,9 +488,9 @@
 							"raw": "{\n  \"name\": \"Coca Cola 1.5L\",\n  \"brand\": \"Coca Cola\",\n  \"basePrice\": 1.85,\n  \"taxPercentage\": 12.0,\n  \"categoryId\": {{categoryId}},\n  \"stock\": 100\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/products",
+							"raw": "{{baseUrl}}/api/v0.0/products",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "products" ]
+							"path": [ "api", "v0.0", "products" ]
 						}
 					},
 					"response": []
@@ -472,9 +507,9 @@
 							"raw": "{\n  \"name\": \"Coca Cola Zero 1.5L\",\n  \"brand\": \"Coca Cola\",\n  \"basePrice\": 1.95,\n  \"taxPercentage\": 12.0,\n  \"categoryId\": {{categoryId}},\n  \"stock\": 150\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+							"raw": "{{baseUrl}}/api/v0.0/products/{{productId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "products", "{{productId}}" ]
+							"path": [ "api", "v0.0", "products", "{{productId}}" ]
 						}
 					},
 					"response": []
@@ -482,7 +517,7 @@
 				{
 					"name": "Restock Product (ADMIN/INVENTORY)",
 					"request": {
-						"method": "POST",
+						"method": "PATCH",
 						"header": [
 							{ "key": "Content-Type", "value": "application/json" }
 						],
@@ -491,10 +526,11 @@
 							"raw": "{\n  \"quantity\": 50\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/products/{{productId}}/restock",
+							"raw": "{{baseUrl}}/api/v0.0/products/{{productId}}/restock",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "products", "{{productId}}", "restock" ]
-						}
+							"path": [ "api", "v0.0", "products", "{{productId}}", "restock" ]
+						},
+						"description": "Aligned with legacy Java PATCH restock semantics (was POST)."
 					},
 					"response": []
 				},
@@ -504,9 +540,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+							"raw": "{{baseUrl}}/api/v0.0/products/{{productId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "products", "{{productId}}" ]
+							"path": [ "api", "v0.0", "products", "{{productId}}" ]
 						}
 					},
 					"response": []
@@ -522,9 +558,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/promotions?page=1&size=10",
+							"raw": "{{baseUrl}}/api/v0.0/promotions?page=1&size=10",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "promotions" ],
+							"path": [ "api", "v0.0", "promotions" ],
 							"query": [
 								{ "key": "page", "value": "1" },
 								{ "key": "size", "value": "10" }
@@ -539,9 +575,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/promotions/{{promotionId}}",
+							"raw": "{{baseUrl}}/api/v0.0/promotions/{{promotionId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "promotions", "{{promotionId}}" ]
+							"path": [ "api", "v0.0", "promotions", "{{promotionId}}" ]
 						}
 					},
 					"response": []
@@ -558,9 +594,9 @@
 							"raw": "{\n  \"name\": \"Black Friday Sale\",\n  \"discountPercentage\": 15.0,\n  \"startDate\": \"2025-02-14T00:00:00Z\",\n  \"endDate\": \"2025-02-16T23:59:59Z\",\n  \"productIds\": [1, 2, 42]\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/promotions",
+							"raw": "{{baseUrl}}/api/v0.0/promotions",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "promotions" ]
+							"path": [ "api", "v0.0", "promotions" ]
 						},
 						"description": "discountPercentage must be > 0 and <= 100. productIds requires at least one entry."
 					},
@@ -578,9 +614,9 @@
 							"raw": "{\n  \"name\": \"Super Saturday Sale\",\n  \"discountPercentage\": 20.0,\n  \"startDate\": \"2025-02-15T00:00:00Z\",\n  \"endDate\": \"2025-02-15T23:59:59Z\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/promotions/{{promotionId}}",
+							"raw": "{{baseUrl}}/api/v0.0/promotions/{{promotionId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "promotions", "{{promotionId}}" ]
+							"path": [ "api", "v0.0", "promotions", "{{promotionId}}" ]
 						}
 					},
 					"response": []
@@ -597,9 +633,9 @@
 							"raw": "{\n  \"productIds\": [3, 4, 5]\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/promotions/{{promotionId}}/products",
+							"raw": "{{baseUrl}}/api/v0.0/promotions/{{promotionId}}/products",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "promotions", "{{promotionId}}", "products" ]
+							"path": [ "api", "v0.0", "promotions", "{{promotionId}}", "products" ]
 						}
 					},
 					"response": []
@@ -610,9 +646,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/promotions/{{promotionId}}",
+							"raw": "{{baseUrl}}/api/v0.0/promotions/{{promotionId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "promotions", "{{promotionId}}" ]
+							"path": [ "api", "v0.0", "promotions", "{{promotionId}}" ]
 						}
 					},
 					"response": []
@@ -623,9 +659,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/promotions/{{promotionId}}/products/{{productId}}",
+							"raw": "{{baseUrl}}/api/v0.0/promotions/{{promotionId}}/products/{{productId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "promotions", "{{promotionId}}", "products", "{{productId}}" ]
+							"path": [ "api", "v0.0", "promotions", "{{promotionId}}", "products", "{{productId}}" ]
 						}
 					},
 					"response": []
@@ -663,9 +699,9 @@
 							"raw": "{\n  \"clientId\": {{clientId}}\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/sales",
+							"raw": "{{baseUrl}}/api/v0.0/sales",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "sales" ]
+							"path": [ "api", "v0.0", "sales" ]
 						},
 						"description": "clientId is optional (omit or null for a guest/walk-in sale). On success, saves the returned sale id into {{saleId}}."
 					},
@@ -677,9 +713,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/sales?page=1&size=10",
+							"raw": "{{baseUrl}}/api/v0.0/sales?page=1&size=10",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "sales" ],
+							"path": [ "api", "v0.0", "sales" ],
 							"query": [
 								{ "key": "page", "value": "1" },
 								{ "key": "size", "value": "10" }
@@ -694,15 +730,32 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/sales/{{saleId}}",
+							"raw": "{{baseUrl}}/api/v0.0/sales/{{saleId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "sales", "{{saleId}}" ]
+							"path": [ "api", "v0.0", "sales", "{{saleId}}" ]
 						}
 					},
 					"response": []
 				},
 				{
 					"name": "Add Item To Sale (ADMIN/CASHIER)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    const items = body.lineItems || [];",
+									"    if (items.length > 0 && items[items.length - 1].itemId) {",
+									"        pm.collectionVariables.set('itemId', items[items.length - 1].itemId);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -713,10 +766,25 @@
 							"raw": "{\n  \"productId\": {{productId}},\n  \"quantity\": 3\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/sales/{{saleId}}/items",
+							"raw": "{{baseUrl}}/api/v0.0/sales/{{saleId}}/details",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "sales", "{{saleId}}", "items" ]
-						}
+							"path": [ "api", "v0.0", "sales", "{{saleId}}", "details" ]
+						},
+						"description": "Aligned with legacy Java /details endpoint (was /items). On success, saves the newly added line item id into {{itemId}}."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sale Detail By ID (ADMIN/CASHIER)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v0.0/sales/details/{{itemId}}",
+							"host": [ "{{baseUrl}}" ],
+							"path": [ "api", "v0.0", "sales", "details", "{{itemId}}" ]
+						},
+						"description": "Retrieve a single line item by its own ID (not scoped under a sale ID in the path)."
 					},
 					"response": []
 				},
@@ -732,10 +800,11 @@
 							"raw": "{\n  \"quantity\": 5\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/sales/{{saleId}}/items/{{itemId}}",
+							"raw": "{{baseUrl}}/api/v0.0/sales/details/{{itemId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "sales", "{{saleId}}", "items", "{{itemId}}" ]
-						}
+							"path": [ "api", "v0.0", "sales", "details", "{{itemId}}" ]
+						},
+						"description": "Aligned with legacy Java /sales/details/{id} endpoint (was /sales/{id}/items/{itemId})."
 					},
 					"response": []
 				},
@@ -745,36 +814,39 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/sales/{{saleId}}/items/{{itemId}}",
+							"raw": "{{baseUrl}}/api/v0.0/sales/details/{{itemId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "sales", "{{saleId}}", "items", "{{itemId}}" ]
-						}
+							"path": [ "api", "v0.0", "sales", "details", "{{itemId}}" ]
+						},
+						"description": "Aligned with legacy Java /sales/details/{id} endpoint (was /sales/{id}/items/{itemId})."
 					},
 					"response": []
 				},
 				{
 					"name": "Finalize Sale (ADMIN/CASHIER)",
 					"request": {
-						"method": "POST",
+						"method": "PATCH",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/sales/{{saleId}}/finalize",
+							"raw": "{{baseUrl}}/api/v0.0/sales/{{saleId}}/finalize",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "sales", "{{saleId}}", "finalize" ]
-						}
+							"path": [ "api", "v0.0", "sales", "{{saleId}}", "finalize" ]
+						},
+						"description": "Aligned with legacy Java PATCH finalize semantics (was POST)."
 					},
 					"response": []
 				},
 				{
 					"name": "Cancel Sale (ADMIN/CASHIER)",
 					"request": {
-						"method": "POST",
+						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/sales/{{saleId}}/cancel",
+							"raw": "{{baseUrl}}/api/v0.0/sales/{{saleId}}",
 							"host": [ "{{baseUrl}}" ],
-							"path": [ "api", "v1", "sales", "{{saleId}}", "cancel" ]
-						}
+							"path": [ "api", "v0.0", "sales", "{{saleId}}" ]
+						},
+						"description": "Aligned with legacy Java DELETE cancel semantics (was POST /sales/{id}/cancel). This DELETEs the sale itself, not a line item."
 					},
 					"response": []
 				}

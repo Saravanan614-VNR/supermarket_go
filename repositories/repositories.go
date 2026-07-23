@@ -2,4 +2,4 @@
 // This file is kept for package structure purposes only.
 // Interfaces and implementations are now declared in their respective dedicated files.
 
-package repositories
+package repositories

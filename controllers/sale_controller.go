@@ -39,7 +39,7 @@ func NewSaleController(saleService services.SaleService) *SaleController {
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/sales [post]
+// @Router /api/v0.0/sales [post]
 func (ctrl *SaleController) OpenSale(c *gin.Context) {
 	var req dto.OpenSaleRequest
 	// Optional request body, don't strictly require json structure if empty, but bind if present
@@ -83,7 +83,7 @@ func (ctrl *SaleController) OpenSale(c *gin.Context) {
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/sales [get]
+// @Router /api/v0.0/sales [get]
 func (ctrl *SaleController) ListSales(c *gin.Context) {
 	page, size := getPaginationParams(c)
 	status := c.Query("status")
@@ -134,7 +134,7 @@ func (ctrl *SaleController) ListSales(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/sales/{id} [get]
+// @Router /api/v0.0/sales/{id} [get]
 func (ctrl *SaleController) GetSaleByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -168,7 +168,7 @@ func (ctrl *SaleController) GetSaleByID(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 409 {object} exceptions.ErrorResponse "Stock insufficient or Sale is not active"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/sales/{id}/items [post]
+// @Router /api/v0.0/sales/{id}/details [post]
 func (ctrl *SaleController) AddItemToSale(c *gin.Context) {
 	idStr := c.Param("id")
 	saleID, err := strconv.ParseUint(idStr, 10, 64)
@@ -201,8 +201,7 @@ func (ctrl *SaleController) AddItemToSale(c *gin.Context) {
 // @Tags Sales
 // @Accept json
 // @Produce json
-// @Param id path int true "Sale ID"
-// @Param itemId path int true "Line Item ID"
+// @Param id path int true "Line Item ID"
 // @Param request body dto.UpdateItemQtyRequest true "Updated quantity details"
 // @Success 200 {object} dto.SaleDetailResponse
 // @Failure 400 {object} exceptions.ErrorResponse "Validation failure"
@@ -210,17 +209,9 @@ func (ctrl *SaleController) AddItemToSale(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 409 {object} exceptions.ErrorResponse "Stock insufficient or Sale is finalized/cancelled"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/sales/{id}/items/{itemId} [put]
+// @Router /api/v0.0/sales/details/{id} [put]
 func (ctrl *SaleController) UpdateItemQuantity(c *gin.Context) {
-	idStr := c.Param("id")
-	saleID, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.Error(exceptions.NewValidationError("Invalid sale ID format"))
-		c.Abort()
-		return
-	}
-
-	itemIDStr := c.Param("itemId")
+	itemIDStr := c.Param("id")
 	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
 	if err != nil {
 		c.Error(exceptions.NewValidationError("Invalid item ID format"))
@@ -235,7 +226,7 @@ func (ctrl *SaleController) UpdateItemQuantity(c *gin.Context) {
 		return
 	}
 
-	res, err := ctrl.saleService.UpdateItemQuantity(c.Request.Context(), saleID, itemID, &req)
+	res, err := ctrl.saleService.UpdateItemQuantity(c.Request.Context(), 0, itemID, &req)
 	if err != nil {
 		c.Error(err)
 		c.Abort()
@@ -251,24 +242,15 @@ func (ctrl *SaleController) UpdateItemQuantity(c *gin.Context) {
 // @Tags Sales
 // @Accept json
 // @Produce json
-// @Param id path int true "Sale ID"
-// @Param itemId path int true "Line Item ID"
+// @Param id path int true "Line Item ID"
 // @Success 200 {object} dto.SaleDetailResponse
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/sales/{id}/items/{itemId} [delete]
+// @Router /api/v0.0/sales/details/{id} [delete]
 func (ctrl *SaleController) RemoveItemFromSale(c *gin.Context) {
-	idStr := c.Param("id")
-	saleID, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.Error(exceptions.NewValidationError("Invalid sale ID format"))
-		c.Abort()
-		return
-	}
-
-	itemIDStr := c.Param("itemId")
+	itemIDStr := c.Param("id")
 	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
 	if err != nil {
 		c.Error(exceptions.NewValidationError("Invalid item ID format"))
@@ -276,7 +258,7 @@ func (ctrl *SaleController) RemoveItemFromSale(c *gin.Context) {
 		return
 	}
 
-	res, err := ctrl.saleService.RemoveItemFromSale(c.Request.Context(), saleID, itemID)
+	res, err := ctrl.saleService.RemoveItemFromSale(c.Request.Context(), 0, itemID)
 	if err != nil {
 		c.Error(err)
 		c.Abort()
@@ -298,7 +280,7 @@ func (ctrl *SaleController) RemoveItemFromSale(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/sales/{id}/finalize [post]
+// @Router /api/v0.0/sales/{id}/finalize [patch]
 func (ctrl *SaleController) FinalizeSale(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -330,7 +312,7 @@ func (ctrl *SaleController) FinalizeSale(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/sales/{id}/cancel [post]
+// @Router /api/v0.0/sales/{id} [delete]
 func (ctrl *SaleController) CancelSale(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -341,6 +323,38 @@ func (ctrl *SaleController) CancelSale(c *gin.Context) {
 	}
 
 	res, err := ctrl.saleService.CancelSale(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		c.Abort()
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+// GetSaleDetailByID retrieves details of a single line item.
+// @Summary Get Line Item Details
+// @Description Retrieve details of a single line item in an open sale. ADMIN or CASHIER role required.
+// @Tags Sales
+// @Accept json
+// @Produce json
+// @Param id path int true "Line Item ID"
+// @Success 200 {object} dto.LineItemResponse
+// @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
+// @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
+// @Failure 404 {object} exceptions.ErrorResponse "Not Found"
+// @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
+// @Router /api/v0.0/sales/details/{id} [get]
+func (ctrl *SaleController) GetSaleDetailByID(c *gin.Context) {
+	itemIDStr := c.Param("id")
+	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
+	if err != nil {
+		c.Error(exceptions.NewValidationError("Invalid item ID format"))
+		c.Abort()
+		return
+	}
+
+	res, err := ctrl.saleService.GetSaleDetailByID(c.Request.Context(), itemID)
 	if err != nil {
 		c.Error(err)
 		c.Abort()

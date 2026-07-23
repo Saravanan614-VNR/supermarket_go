@@ -32,6 +32,7 @@ type SaleService interface {
 	RemoveItemFromSale(ctx context.Context, saleID, itemID uint64) (*dto.SaleDetailResponse, error)
 	FinalizeSale(ctx context.Context, id uint64) (*dto.SaleResponse, error)
 	CancelSale(ctx context.Context, id uint64) (*dto.SaleResponse, error)
+	GetSaleDetailByID(ctx context.Context, id uint64) (*dto.LineItemResponse, error)
 }
 
 type saleServiceImpl struct {
@@ -221,9 +222,9 @@ func (s *saleServiceImpl) AddItemToSale(ctx context.Context, saleID uint64, req 
 				allDetails[i].Product = *product
 			} else {
 				prod, err := s.productRepo.FindByID(ctx, det.ProductID)
-					if err != nil {
-						return exceptions.NewInternalError("Failed to find product during response payload assembly: " + err.Error())
-					}
+				if err != nil {
+					return exceptions.NewInternalError("Failed to find product during response payload assembly: " + err.Error())
+				}
 				if prod != nil {
 					allDetails[i].Product = *prod
 				}
@@ -232,10 +233,10 @@ func (s *saleServiceImpl) AddItemToSale(ctx context.Context, saleID uint64, req 
 
 		// 9. Prepare return payloads
 		var assembleErr error
-			response, assembleErr = s.assembleSaleDetailResponse(ctx, sale, allDetails)
-			if assembleErr != nil {
-				return assembleErr
-			}
+		response, assembleErr = s.assembleSaleDetailResponse(ctx, sale, allDetails)
+		if assembleErr != nil {
+			return assembleErr
+		}
 		return nil
 	})
 
@@ -250,6 +251,17 @@ func (s *saleServiceImpl) UpdateItemQuantity(ctx context.Context, saleID, itemID
 	var response *dto.SaleDetailResponse
 
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if saleID == 0 {
+			var detail entities.SaleDetail
+			if err := tx.WithContext(ctx).First(&detail, itemID).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return exceptions.NewNotFoundError("Sale detail not found")
+				}
+				return exceptions.NewInternalError("Database error fetching sale detail: " + err.Error())
+			}
+			saleID = detail.SaleID
+		}
+
 		// 1. Verify parent sale is open
 		sale, err := s.saleRepo.FindSaleByIDWithLock(ctx, tx, saleID)
 		if err != nil {
@@ -331,9 +343,9 @@ func (s *saleServiceImpl) UpdateItemQuantity(ctx context.Context, saleID, itemID
 				allDetails[i] = detail
 			} else {
 				prod, err := s.productRepo.FindByID(ctx, det.ProductID)
-					if err != nil {
-						return exceptions.NewInternalError("Failed to find product during response payload assembly: " + err.Error())
-					}
+				if err != nil {
+					return exceptions.NewInternalError("Failed to find product during response payload assembly: " + err.Error())
+				}
 				if prod != nil {
 					allDetails[i].Product = *prod
 				}
@@ -341,10 +353,10 @@ func (s *saleServiceImpl) UpdateItemQuantity(ctx context.Context, saleID, itemID
 		}
 
 		var assembleErr error
-			response, assembleErr = s.assembleSaleDetailResponse(ctx, sale, allDetails)
-			if assembleErr != nil {
-				return assembleErr
-			}
+		response, assembleErr = s.assembleSaleDetailResponse(ctx, sale, allDetails)
+		if assembleErr != nil {
+			return assembleErr
+		}
 		return nil
 	})
 
@@ -359,6 +371,17 @@ func (s *saleServiceImpl) RemoveItemFromSale(ctx context.Context, saleID, itemID
 	var response *dto.SaleDetailResponse
 
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if saleID == 0 {
+			var detail entities.SaleDetail
+			if err := tx.WithContext(ctx).First(&detail, itemID).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return exceptions.NewNotFoundError("Sale detail not found")
+				}
+				return exceptions.NewInternalError("Database error fetching sale detail: " + err.Error())
+			}
+			saleID = detail.SaleID
+		}
+
 		// 1. Verify parent sale is open
 		sale, err := s.saleRepo.FindSaleByIDWithLock(ctx, tx, saleID)
 		if err != nil {
@@ -416,9 +439,9 @@ func (s *saleServiceImpl) RemoveItemFromSale(ctx context.Context, saleID, itemID
 			if det.ID != itemID {
 				newTotal += det.SubTotal
 				prod, err := s.productRepo.FindByID(ctx, det.ProductID)
-					if err != nil {
-						return exceptions.NewInternalError("Failed to find product during response payload assembly: " + err.Error())
-					}
+				if err != nil {
+					return exceptions.NewInternalError("Failed to find product during response payload assembly: " + err.Error())
+				}
 				if prod != nil {
 					det.Product = *prod
 				}
@@ -431,10 +454,10 @@ func (s *saleServiceImpl) RemoveItemFromSale(ctx context.Context, saleID, itemID
 		}
 
 		var assembleErr error
-			response, assembleErr = s.assembleSaleDetailResponse(ctx, sale, remainingDetails)
-			if assembleErr != nil {
-				return assembleErr
-			}
+		response, assembleErr = s.assembleSaleDetailResponse(ctx, sale, remainingDetails)
+		if assembleErr != nil {
+			return assembleErr
+		}
 		return nil
 	})
 
@@ -622,5 +645,28 @@ func (s *saleServiceImpl) assembleSaleDetailResponse(ctx context.Context, sale *
 			CreatedAt:  sale.CreatedAt,
 		},
 		LineItems: lineItems,
+	}, nil
+}
+
+// GetSaleDetailByID retrieves details of a single line item.
+func (s *saleServiceImpl) GetSaleDetailByID(ctx context.Context, id uint64) (*dto.LineItemResponse, error) {
+	detail, err := s.saleRepo.FindDetailByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, exceptions.NewNotFoundError("Sale detail not found")
+		}
+		return nil, exceptions.NewInternalError("Database error fetching sale detail: " + err.Error())
+	}
+	if detail == nil {
+		return nil, exceptions.NewNotFoundError("Sale detail not found")
+	}
+
+	return &dto.LineItemResponse{
+		ItemID:    detail.ID,
+		ProductID: detail.ProductID,
+		Name:      detail.Product.Name,
+		UnitPrice: detail.UnitPrice,
+		Quantity:  detail.Quantity,
+		SubTotal:  detail.SubTotal,
 	}, nil
 }

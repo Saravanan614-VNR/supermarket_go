@@ -575,4 +575,4 @@ func TestSaleService_FailurePaths(t *testing.T) {
 			t.Errorf("expected VALIDATION_FAILED, got %v", err)
 		}
 	})
-}
+}

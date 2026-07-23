@@ -215,4 +215,4 @@ func (r *saleRepository) FindAllDetailsBySaleIDWithTx(ctx context.Context, tx *g
 		return nil, err
 	}
 	return details, nil
-}
+}

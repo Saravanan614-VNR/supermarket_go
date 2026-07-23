@@ -40,7 +40,7 @@ func NewProductController(productService services.ProductService) *ProductContro
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 409 {object} exceptions.ErrorResponse "Product already exists"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/products [post]
+// @Router /api/v0.0/products [post]
 func (ctrl *ProductController) CreateProduct(c *gin.Context) {
 	var req dto.CreateProductReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -71,7 +71,7 @@ func (ctrl *ProductController) CreateProduct(c *gin.Context) {
 // @Success 200 {object} dto.PaginatedProducts
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/products [get]
+// @Router /api/v0.0/products [get]
 func (ctrl *ProductController) ListProducts(c *gin.Context) {
 	page, size := getPaginationParams(c)
 	name := c.Query("name")
@@ -97,7 +97,7 @@ func (ctrl *ProductController) ListProducts(c *gin.Context) {
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/products/{id} [get]
+// @Router /api/v0.0/products/{id} [get]
 func (ctrl *ProductController) GetProductByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -131,7 +131,7 @@ func (ctrl *ProductController) GetProductByID(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/products/{id} [put]
+// @Router /api/v0.0/products/{id} [put]
 func (ctrl *ProductController) UpdateProduct(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -170,7 +170,7 @@ func (ctrl *ProductController) UpdateProduct(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/products/{id} [delete]
+// @Router /api/v0.0/products/{id} [delete]
 func (ctrl *ProductController) DeleteProduct(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -204,7 +204,7 @@ func (ctrl *ProductController) DeleteProduct(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/products/{id}/restock [post]
+// @Router /api/v0.0/products/{id}/restock [post]
 func (ctrl *ProductController) RestockProduct(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -242,7 +242,7 @@ func (ctrl *ProductController) RestockProduct(c *gin.Context) {
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/products/{id}/price [get]
+// @Router /api/v0.0/products/{id}/price [get]
 func (ctrl *ProductController) GetProductPrice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -260,4 +260,4 @@ func (ctrl *ProductController) GetProductPrice(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
-}
+}

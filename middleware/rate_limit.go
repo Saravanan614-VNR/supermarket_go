@@ -100,4 +100,4 @@ func (l *IPRateLimiter) allow(ip string) bool {
 	}
 
 	return false
-}
+}

@@ -40,7 +40,7 @@ func NewCategoryController(categoryService services.CategoryService) *CategoryCo
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 409 {object} exceptions.ErrorResponse "Category already exists"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/categories [post]
+// @Router /api/v0.0/categories [post]
 func (ctrl *CategoryController) CreateCategory(c *gin.Context) {
 	var req dto.CreateCategoryReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -71,7 +71,7 @@ func (ctrl *CategoryController) CreateCategory(c *gin.Context) {
 // @Success 200 {object} dto.PaginatedCategories
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/categories [get]
+// @Router /api/v0.0/categories [get]
 func (ctrl *CategoryController) ListCategories(c *gin.Context) {
 	page, size := getPaginationParams(c)
 	filter := c.Query("filter")
@@ -97,7 +97,7 @@ func (ctrl *CategoryController) ListCategories(c *gin.Context) {
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/categories/{id} [get]
+// @Router /api/v0.0/categories/{id} [get]
 func (ctrl *CategoryController) GetCategoryByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -131,7 +131,7 @@ func (ctrl *CategoryController) GetCategoryByID(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/categories/{id} [put]
+// @Router /api/v0.0/categories/{id} [put]
 func (ctrl *CategoryController) UpdateCategory(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -170,7 +170,7 @@ func (ctrl *CategoryController) UpdateCategory(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/categories/{id} [delete]
+// @Router /api/v0.0/categories/{id} [delete]
 func (ctrl *CategoryController) DeleteCategory(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -203,7 +203,7 @@ func (ctrl *CategoryController) DeleteCategory(c *gin.Context) {
 // @Failure 401 {object} exceptions.ErrorResponse "Unauthorized"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/categories/{id}/products [get]
+// @Router /api/v0.0/categories/{id}/products [get]
 func (ctrl *CategoryController) ListCategoryProducts(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -223,4 +223,4 @@ func (ctrl *CategoryController) ListCategoryProducts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
-}
+}

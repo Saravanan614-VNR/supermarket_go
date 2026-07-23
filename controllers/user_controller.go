@@ -241,7 +241,7 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 // @Failure 403 {object} exceptions.ErrorResponse "Forbidden"
 // @Failure 404 {object} exceptions.ErrorResponse "Not Found"
 // @Failure 500 {object} exceptions.ErrorResponse "Internal Server Error"
-// @Router /api/v1/users/{id} [delete]
+// @Router /api/v0.0/users/{id} [delete]
 func (ctrl *UserController) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
@@ -313,4 +313,4 @@ func getOperatorRole(c *gin.Context) string {
 		}
 	}
 	return ""
-}
+}
